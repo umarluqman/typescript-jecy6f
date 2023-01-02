@@ -44,7 +44,15 @@ class EventProcessor<T> {
     this.addMap(eventName, map);
   }
 
-  getProcessedEvents() {}
+  getProcessedEvents() {
+    return this.events.reduce((acc, { eventName, data }, index) => {
+      if (this.filters[index]) {
+        const validEvent = this.events.filter(this.filters[index]);
+        return validEvent;
+      }
+      return acc;
+    }, []);
+  }
 }
 
 interface EventMap {
