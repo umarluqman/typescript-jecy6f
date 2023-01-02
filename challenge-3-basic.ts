@@ -1,33 +1,64 @@
-class EventProcessor<EventMap, Name extends keyof EventMap> {
-  handleEvent(eventName: Name , data: EventMap[Name]): void {
-  }
-
-  addFilter(
-    eventName: Name
-    filter: (data: ...) => boolean
-  ): void {
-  }
-
-  addMap(eventName: ..., map: (data: ...) => ...): void {
-  }
-
-  getProcessedEvents() {
-  }
+interface EventName<T> {
+  eventName: keyof T;
 }
 
+interface EventData<T> {
+  data: T[keyof T];
+}
+
+interface MyEvent<T> extends EventName<T> {
+  data: EventData<T>["data"];
+}
+
+interface MyFilter<T> extends EventName<T> {
+  filters: (data: T[keyof T]) => boolean;
+}
+
+interface MyMap<T> extends EventName<T> {
+  maps: (data: T[keyof T]) => T[keyof T];
+}
+
+class EventProcessor<T> {
+  protected events: MyEvent<T>[] = [];
+  protected filters = [];
+  protected maps = [];
+
+  handleEvent<Name extends keyof T>(
+    eventName: Name,
+    data: EventData<T>["data"]
+  ): void {
+    this.events.push({
+      eventName,
+      data,
+    });
+  }
+
+  addFilter<Name extends EventName<T>["eventName"]>(
+    eventName: Name,
+    filter: (data: T[keyof T]) => boolean
+  ): void {
+    this.addFilter(eventName, filter);
+  }
+
+  addMap(eventName: keyof T, map: (data: T[keyof T]) => T[keyof T]): void {
+    this.addMap(eventName, map);
+  }
+
+  getProcessedEvents() {}
+}
 
 interface EventMap {
-  login: { user?: string; name?: string; hasSession?: boolean };
+  login: { user?: string | null; name?: string; hasSession?: boolean };
   logout: { user?: string };
 }
 
-class UserEventProcessor extends EventProcessor<EventMap, string> {}
+class UserEventProcessor extends EventProcessor<EventMap> {}
 
 const uep = new UserEventProcessor();
 
 uep.addFilter("login", ({ user }) => Boolean(user));
 
-uep.addMap("login", (data) => ({
+uep.addMap("login", (data: EventMap["login"]) => ({
   ...data,
   hasSession: Boolean(data.user && data.name),
 }));
